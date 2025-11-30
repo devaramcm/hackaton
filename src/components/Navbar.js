@@ -65,19 +65,17 @@ export default function Navbar({ onNavigate, onJoin }) {
   };
 
   const handleLogout = () => {
-    // clear both storages to be safe
-    sessionStorage.removeItem("agri_user");
-    localStorage.removeItem("agri_user");
-    // also clear token if you use one
-    sessionStorage.removeItem("agri_user_token");
-    localStorage.removeItem("agri_user_token");
+  localStorage.removeItem("agri_user");
+  sessionStorage.removeItem("agri_user"); // in case user logged in with session
+  setUser(null);
 
-    // notify other parts of the app (same tab)
-    window.dispatchEvent(new Event("agri_user_changed"));
+  // go to home page
+  navigate("/", { replace: true });
 
-    setUser(null);
-    navigate("/login");
-  };
+  // optional: force refresh active nav
+  window.dispatchEvent(new Event("agri_user_changed"));
+};
+
 
   const goToDashboard = () => {
     if (!user) return navigate("/login");
