@@ -1,21 +1,15 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import MathCaptcha from "../components/MathCaptcha";
 
 export default function Login() {
-  const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // captcha + "keep signed" state
   const [captchaOK, setCaptchaOK] = useState(false);
   const [keepSigned, setKeepSigned] = useState(false);
 
-  // Hardcoded demo users
   const demoUsers = [
     { name: "Farmer Demo", email: "farmer@example.com", password: "farmer123", type: "farmer" },
     { name: "Expert Demo", email: "expert@example.com", password: "expert123", type: "expert" }
@@ -25,7 +19,6 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
-    // require captcha
     if (!captchaOK) {
       setError("Please solve the captcha before logging in.");
       return;
@@ -33,33 +26,31 @@ export default function Login() {
 
     setLoading(true);
 
-    // simulate small delay (feel more "real")
     setTimeout(() => {
-      const user = demoUsers.find(u => u.email === email.trim() && u.password === pass);
+      const trimmed = email.trim();
+      const user = demoUsers.find(u => u.email === trimmed && u.password === pass);
+
       if (!user) {
         setLoading(false);
         setError("Invalid credentials. Try farmer@example.com / farmer123 or expert@example.com / expert123");
         return;
       }
 
-      // Save session (sessionStorage if not keepSigned, otherwise localStorage)
       const session = { name: user.name, email: user.email, type: user.type };
+      if (keepSigned) localStorage.setItem("agri_user", JSON.stringify(session));
+      else sessionStorage.setItem("agri_user", JSON.stringify(session));
 
-      if (keepSigned) {
-        localStorage.setItem("agri_user", JSON.stringify(session));
-      } else {
-        sessionStorage.setItem("agri_user", JSON.stringify(session));
-      }
-
-      // notify navbar / other listeners in same tab
+      // notify same-tab listeners
       window.dispatchEvent(new Event("agri_user_changed"));
 
-      // stop loading then redirect based on role
-      setLoading(false);
-      if (user.type === "farmer") navigate("/farmer-dashboard");
-      else if (user.type === "expert") navigate("/expert-dashboard");
-      else navigate("/dashboard");
-    }, 600);
+      // small pause to ensure storage flush, then hard redirect
+      setTimeout(() => {
+        setLoading(false);
+        if (user.type === "farmer") window.location.href = "/farmer-dashboard";
+        else if (user.type === "expert") window.location.href = "/expert-dashboard";
+        else window.location.href = "/";
+      }, 80);
+    }, 350);
   };
 
   return (
@@ -92,10 +83,8 @@ export default function Login() {
             autoComplete="current-password"
           />
 
-          {/* Math CAPTCHA */}
           <MathCaptcha onChange={(ok) => setCaptchaOK(ok)} />
 
-          {/* Keep me signed in */}
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
             <input
               type="checkbox"
